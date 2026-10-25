@@ -26,8 +26,12 @@ export function Editor({ value, onChange, theme }: EditorProps) {
         ".cm-scroller": {
           fontFamily: "var(--font-google-sans-code), ui-monospace, monospace",
           fontSize: "var(--editor-font-size, 14px)",
-          lineHeight: "1.6",
+          lineHeight: "1.7",
+          letterSpacing: "0",
         },
+        ".cm-content": { padding: "16px 0" },
+        ".cm-line": { padding: "0 12px" },
+        ".cm-gutters": { padding: "16px 0 16px 8px" },
         "&.cm-focused": { outline: "none" },
       }),
     ],

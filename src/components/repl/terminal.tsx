@@ -13,17 +13,17 @@ export function Terminal() {
   }, [logs]);
 
   return (
-    <div className="h-full w-full bg-background border-t border-border">
+    <div className="h-full w-full bg-background">
       <ScrollArea className="h-full">
         <div
-          className="p-2 font-mono"
+          className="px-4 py-3 font-mono"
           style={{
             fontSize: "var(--editor-font-size)",
             lineHeight: "1.6",
           }}
         >
           {logs.length === 0 ? (
-            <div className="text-muted-foreground/50">
+            <div className="text-faint">
               <span className="lg:hidden">Tap Run to execute code</span>
               <span className="hidden lg:inline">
                 Ctrl/Cmd + Enter to run code
@@ -42,7 +42,7 @@ export function Terminal() {
 function LogLine({ entry }: { entry: LogEntry }) {
   const cls =
     entry.type === "error"
-      ? "whitespace-pre-wrap break-words text-red-500"
+      ? "whitespace-pre-wrap break-words text-destructive"
       : "whitespace-pre-wrap break-words";
   return <div className={cls}>{entry.message}</div>;
 }

@@ -1,14 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
 import localFont from "next/font/local";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ServiceWorkerProvider } from "@/components/providers/service-worker-provider";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const inter = localFont({
+  src: [
+    { path: "./fonts/inter-variable-latin.woff2", weight: "100 900", style: "normal" },
+    { path: "./fonts/inter-variable-italic-latin.woff2", weight: "100 900", style: "italic" },
+  ],
+  variable: "--font-inter",
+  display: "swap",
 });
 
 const googleSansCode = localFont({
@@ -30,8 +33,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: light)", color: "#fdfdfc" },
+    { media: "(prefers-color-scheme: dark)", color: "#111111" },
   ],
 };
 
@@ -43,7 +46,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${googleSansCode.variable} antialiased`}
+        className={`${inter.variable} ${googleSansCode.variable} antialiased`}
       >
         <NuqsAdapter>
           <ThemeProvider

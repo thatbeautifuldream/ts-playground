@@ -35,7 +35,7 @@ export function PageClient() {
   const setCode = useReplStore((s) => s.setCode);
   const pushLog = useReplStore((s) => s.pushLog);
   const clearLogs = useReplStore((s) => s.clearLogs);
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
 
   const [urlCode, setUrlCode] = useQueryState(
     "code",
@@ -113,8 +113,8 @@ export function PageClient() {
     return url.toString();
   }, [code]);
 
-  const toggleTheme = () => setTheme(theme === "light" ? "dark" : "light");
-  const editorTheme = theme === "light" ? "light" : "dark";
+  const toggleTheme = () => setTheme(resolvedTheme === "light" ? "dark" : "light");
+  const editorTheme = resolvedTheme === "light" ? "light" : "dark";
 
   return (
     <main className="h-dvh bg-background text-foreground overflow-hidden flex flex-col">
@@ -193,16 +193,16 @@ function MobileToolbar({
   onRun: () => void;
 }) {
   return (
-    <div className="flex items-center gap-1.5 h-12 px-2 border-b border-border bg-muted/30 flex-shrink-0">
+    <div className="flex items-center gap-1.5 h-12 px-2 border-b border-border bg-background flex-shrink-0">
       <div className="flex items-center rounded-lg bg-background p-0.5 border border-border">
         <button
           type="button"
           onClick={() => setMobileView("editor")}
           aria-pressed={mobileView === "editor"}
           className={cn(
-            "inline-flex items-center gap-1.5 px-3 h-9 text-sm rounded-[7px] transition-colors",
+            "inline-flex items-center gap-1.5 px-3 h-9 text-sm rounded-md transition-colors",
             mobileView === "editor"
-              ? "bg-muted font-medium text-foreground"
+              ? "bg-accent font-medium text-foreground"
               : "text-muted-foreground"
           )}
         >
@@ -214,9 +214,9 @@ function MobileToolbar({
           onClick={() => setMobileView("console")}
           aria-pressed={mobileView === "console"}
           className={cn(
-            "inline-flex items-center gap-1.5 px-3 h-9 text-sm rounded-[7px] transition-colors",
+            "inline-flex items-center gap-1.5 px-3 h-9 text-sm rounded-md transition-colors",
             mobileView === "console"
-              ? "bg-muted font-medium text-foreground"
+              ? "bg-accent font-medium text-foreground"
               : "text-muted-foreground"
           )}
         >
