@@ -41,7 +41,7 @@ export function Header({ onRun, onThemeToggle, getShareUrl, onFormat, onTerminal
           </Button>
         )}
         {onRun && (
-          <Button type="button" variant="default" size="sm" onClick={onRun} className="relative h-8 px-3" title="Run (Ctrl/Cmd+Enter)">
+          <Button type="button" variant="default" size="sm" onClick={onRun} className="relative h-8 px-3" title="Run (Option/Alt+Enter)" aria-keyshortcuts="Alt+Enter">
             Run<TouchTarget />
           </Button>
         )}

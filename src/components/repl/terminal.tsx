@@ -26,7 +26,7 @@ export function Terminal({ ref }: { ref?: Ref<HTMLDivElement> }) {
             <div className="text-faint">
               <span className="lg:hidden">Tap Run to execute code</span>
               <span className="hidden lg:inline">
-                Ctrl/Cmd + Enter to run code
+                Option/Alt + Enter to run code
               </span>
             </div>
           ) : (

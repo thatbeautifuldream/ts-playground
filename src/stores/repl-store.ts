@@ -13,7 +13,7 @@ type ReplState = {
   clearLogs: () => void;
 };
 
-const defaultSnippet = `// TypeScript Playground - Cmd/Ctrl + Enter to run, Cmd/Ctrl + S to format
+const defaultSnippet = `// TypeScript Playground - Option/Alt + Enter to run, Cmd/Ctrl + S to format
 
 type User = {
   name: string;

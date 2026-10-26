@@ -7,7 +7,7 @@ pnpm install
 pnpm dev
 ```
 
-Open http://localhost:3000. Use Cmd/Ctrl + Enter to run and Cmd/Ctrl + S to format.
+Open http://localhost:3000. Use Option/Alt + Enter to run and Cmd/Ctrl + S to format.
 
 ```sh
 pnpm lint

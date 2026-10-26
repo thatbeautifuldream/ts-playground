@@ -110,8 +110,7 @@ export function PageClient() {
 
   useHotkeys(
     [
-      { hotkey: "Control+Enter", callback: runCode, options: { meta: { name: "Run code" } } },
-      { hotkey: "Meta+Enter", callback: runCode, options: { meta: { name: "Run code" } } },
+      { hotkey: "Alt+Enter", callback: runCode, options: { meta: { name: "Run code" } } },
       { hotkey: "Control+S", callback: handleFormat, options: { meta: { name: "Format code" } } },
       { hotkey: "Meta+S", callback: handleFormat, options: { meta: { name: "Format code" } } },
       { hotkey: "Control+`", callback: toggleTerminal, options: { meta: { name: "Toggle terminal" } } },
@@ -248,7 +247,7 @@ function MobileToolbar({
         <Button type="button" variant="ghost" size="sm" onClick={onFormat} className="relative h-8 px-2" title="Format code">
           Format<TouchTarget />
         </Button>
-        <Button type="button" size="sm" onClick={onRun} className="relative h-8 px-3" title="Run code">
+        <Button type="button" size="sm" onClick={onRun} className="relative h-8 px-3" title="Run (Option/Alt+Enter)" aria-keyshortcuts="Alt+Enter">
           Run<TouchTarget />
         </Button>
       </div>
