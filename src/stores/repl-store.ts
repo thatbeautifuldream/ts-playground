@@ -1,10 +1,11 @@
 "use client";
 
+import type { ConsoleValue } from "@/lib/console-value";
 import type { CodeDiagnostic } from "@/lib/diagnostics";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
-export type LogEntry = { type: "log" | "error"; message: string; line?: number; column?: number; source?: string };
+export type LogEntry = { type: "log" | "error" | "warn" | "info" | "debug"; values?: ConsoleValue[]; message: string; line?: number; column?: number; source?: string };
 
 export type Execution = { status: "idle" | "running" | "success" | "error" | "stopped"; duration: number };
 
@@ -49,7 +50,7 @@ export const useReplStore = create<ReplState>()(
       code: defaultSnippet,
       setCode: (code) => set({ code }),
       logs: [],
-      pushLog: (entry) => set({ logs: [...get().logs, entry] }),
+      pushLog: (entry) => set({ logs: [...get().logs.slice(-999), entry] }),
       clearLogs: () => set({ logs: [] }),
     }),
     {

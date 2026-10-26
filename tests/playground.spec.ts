@@ -33,3 +33,34 @@ test("runtime errors map back to the original TypeScript line", async ({ page })
   await expect(page.getByRole("button", { name: /Line 2:/ })).toBeVisible({ timeout: 15000 });
   await expect(page.getByRole("status")).toContainText("Failed");
 });
+
+test("console preserves structured values, warnings, and copy/clear actions", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/");
+  await page.locator(".cm-content").fill('console.warn("careful"); console.log({ answer: 42, nested: [1, 2] });');
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await expect(page.getByText("careful", { exact: true })).toBeVisible();
+  await page.getByText("Object · Expand", { exact: true }).click();
+  await expect(page.getByText("answer:", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Copy output", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Clear", exact: true }).click();
+  await expect(page.getByText("Output cleared.", { exact: true })).toBeVisible();
+  await page.screenshot({ path: "/tmp/playground-console-desktop.png" });
+});
+
+test("incoming output does not steal the scroll position", async ({ page }) => {
+  await page.goto("/");
+  await page.locator(".cm-content").fill('for(let i=0;i<100;i++) console.log("line",i); setInterval(()=>console.log("new output"),200);');
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  const scroll = page.locator("[data-console-scroll]");
+  await expect(page.getByText("99", { exact: true })).toBeVisible();
+  await scroll.hover();
+  await page.mouse.wheel(0, -10000);
+  await expect(page.getByRole("button", { name: "Latest", exact: true })).toBeVisible();
+  const top = await scroll.evaluate(element => element.scrollTop);
+  expect(top).toBeLessThan(100);
+  await page.getByRole("button", { name: "Latest", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Latest", exact: true })).not.toBeVisible();
+  await page.getByRole("button", { name: "Stop", exact: true }).click();
+});

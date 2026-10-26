@@ -1,5 +1,7 @@
 /// <reference lib="webworker" />
 
+import { snapshot } from "./console-value";
+
 // User code runs off the UI thread so Stop can terminate even an infinite loop.
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 let failed = false;
@@ -32,7 +34,8 @@ for (const level of ["log", "info", "warn", "debug", "error", "table"] as const)
       return;
     }
     if (level === "error") failed = true;
-    send(level === "error" ? "error" : "log", args.map(stringify).join(" "));
+    const values = args.map(value => snapshot(value));
+    send(level === "table" ? "log" : level, { message: values.map(value => value.preview).join(" "), values });
   };
 }
 scope.setTimeout = ((callback: TimerHandler, delay?: number, ...args: unknown[]) => {
