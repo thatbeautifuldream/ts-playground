@@ -21,6 +21,7 @@ import { TouchTarget } from "./touch-target";
 
 interface HeaderProps {
   onRun?: () => void;
+  running?: boolean;
   onThemeToggle?: () => void;
   getShareUrl?: () => string;
   onFormat?: () => void;
@@ -28,7 +29,7 @@ interface HeaderProps {
   terminalOpen?: boolean;
 }
 
-export function Header({ onRun, onThemeToggle, getShareUrl, onFormat, onTerminalToggle, terminalOpen }: HeaderProps) {
+export function Header({ onRun, onThemeToggle, getShareUrl, onFormat, onTerminalToggle, terminalOpen, running }: HeaderProps) {
   return (
     <header className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-border bg-background px-3 sm:px-4">
       <div className="min-w-0 truncate text-sm font-medium">
@@ -42,7 +43,7 @@ export function Header({ onRun, onThemeToggle, getShareUrl, onFormat, onTerminal
         )}
         {onRun && (
           <Button type="button" variant="default" size="sm" onClick={onRun} className="relative h-8 px-3" title="Run (Option/Alt+Enter)" aria-keyshortcuts="Alt+Enter">
-            Run<TouchTarget />
+            {running ? "Stop" : "Run"}<TouchTarget />
           </Button>
         )}
         {onTerminalToggle && (

@@ -29,8 +29,7 @@ type MobileView = "editor" | "console";
 export function PageClient() {
   const code = useReplStore((s) => s.code);
   const setCode = useReplStore((s) => s.setCode);
-  const pushLog = useReplStore((s) => s.pushLog);
-  const clearLogs = useReplStore((s) => s.clearLogs);
+  const running = useReplStore((s) => s.execution.status === "running");
   const { resolvedTheme, setTheme } = useTheme();
 
   const [urlCode, setUrlCode] = useQueryState(
@@ -87,19 +86,17 @@ export function PageClient() {
     };
   }, [code, urlCode, setUrlCode]);
 
-  const { containerRef, run } = useSandbox((entry) => {
-    pushLog(entry);
-  });
+  const { run, stop } = useSandbox();
 
   const runCode = useCallback(() => {
-    clearLogs();
+    if (running) { stop(); return; }
     run(code);
     if (isMobile) {
       setMobileView("console");
     } else {
       terminalPanelRef.current?.expand();
     }
-  }, [code, clearLogs, run, isMobile]);
+  }, [code, run, stop, running, isMobile]);
 
   const handleFormat = useCallback(async () => {
     const result = await formatTypeScript(code);
@@ -142,6 +139,7 @@ export function PageClient() {
             setMobileView={setMobileView}
             onFormat={handleFormat}
             onRun={runCode}
+            running={running}
           />
           <div className="flex-1 min-h-0 flex flex-col">
             <div
@@ -170,6 +168,7 @@ export function PageClient() {
         <>
           <Header
             onRun={runCode}
+            running={running}
             onThemeToggle={toggleTheme}
             getShareUrl={getShareUrl}
             onFormat={handleFormat}
@@ -206,7 +205,6 @@ export function PageClient() {
         </>
       )}
 
-      <div ref={containerRef} aria-hidden="true" />
     </main>
   );
 }
@@ -216,11 +214,13 @@ function MobileToolbar({
   setMobileView,
   onFormat,
   onRun,
+  running,
 }: {
   mobileView: MobileView;
   setMobileView: (v: MobileView) => void;
   onFormat: () => void;
   onRun: () => void;
+  running: boolean;
 }) {
   return (
     <div className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-border px-3">
@@ -248,7 +248,7 @@ function MobileToolbar({
           Format<TouchTarget />
         </Button>
         <Button type="button" size="sm" onClick={onRun} className="relative h-8 px-3" title="Run (Option/Alt+Enter)" aria-keyshortcuts="Alt+Enter">
-          Run<TouchTarget />
+          {running ? "Stop" : "Run"}<TouchTarget />
         </Button>
       </div>
     </div>

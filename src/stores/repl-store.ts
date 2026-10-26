@@ -5,7 +5,11 @@ import { persist, createJSONStorage } from "zustand/middleware";
 
 export type LogEntry = { type: "log" | "error"; message: string };
 
+export type Execution = { status: "idle" | "running" | "success" | "error" | "stopped"; duration: number };
+
 type ReplState = {
+  execution: Execution;
+  setExecution: (execution: Execution) => void;
   code: string;
   setCode: (code: string) => void;
   logs: LogEntry[];
@@ -35,6 +39,8 @@ console.log("Doubled:", doubled);
 export const useReplStore = create<ReplState>()(
   persist(
     (set, get) => ({
+      execution: { status: "idle", duration: 0 },
+      setExecution: (execution) => set({ execution }),
       code: defaultSnippet,
       setCode: (code) => set({ code }),
       logs: [],
@@ -44,7 +50,7 @@ export const useReplStore = create<ReplState>()(
     {
       name: "js-repl",
       storage: createJSONStorage(() => localStorage),
-      partialize: (s) => ({ code: s.code, logs: s.logs }),
+      partialize: (s) => ({ code: s.code }),
     }
   )
 );
