@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { TouchTarget } from "@/components/ui/touch-target";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-export function SnippetsMenu({ onThemeToggle }: { onThemeToggle?: () => void }) {
+export function SnippetsMenu({ onThemeToggle, onFormat }: { onThemeToggle?: () => void; onFormat?: () => void }) {
   const snippets = useReplStore((state) => state.snippets);
   const [open, setOpen] = useState(false);
   const [notice, setNotice] = useState("");
@@ -19,6 +19,7 @@ export function SnippetsMenu({ onThemeToggle }: { onThemeToggle?: () => void }) 
         <Button type="button" size="sm" variant="ghost" onClick={() => replace("")}>New snippet</Button>
         <Button type="button" size="sm" variant="ghost" onClick={() => { useReplStore.getState().saveCurrent(); setNotice("Snapshot saved on this device."); }}>Save copy</Button>
         <Button type="button" size="sm" variant="ghost" onClick={() => { useReplStore.getState().resetExample(); setOpen(false); }}>Reset example</Button>
+        {onFormat && <Button type="button" size="sm" variant="ghost" className="lg:hidden" onClick={() => { onFormat(); setOpen(false); }}>Format code</Button>}
         {onThemeToggle && <Button type="button" size="sm" variant="ghost" className="lg:hidden" onClick={onThemeToggle}>Theme</Button>}
       </div>
       <p className="text-base text-muted-foreground sm:text-sm">Your draft is saved on this device. Switching snippets keeps the previous draft in recents.</p>

@@ -1,5 +1,8 @@
 "use client";
 
+import { EditingKeys } from "@/components/repl/editing-keys";
+import { indentMore } from "@codemirror/commands";
+import { useVisualViewport } from "@/hooks/use-visual-viewport";
 import { Terminal } from "@/components/repl/terminal";
 import { Editor } from "@/components/repl/editor";
 import { Header } from "@/components/ui/header";
@@ -34,13 +37,23 @@ export function PageClient() {
   const snapshotNotice = useReplStore((s) => s.snapshotNotice);
   const setSnapshotNotice = useReplStore((s) => s.setSnapshotNotice);
   const isMobile = useMediaQuery("(max-width: 1023px)");
-  const [mobileView, setMobileView] = useState<MobileView>("editor");
+  const [keysOpen, setKeysOpen] = useState(false);
+  const [mobileView, setMobileViewState] = useState<MobileView>("editor");
   const [terminalOpen, setTerminalOpen] = useState(true);
   const terminalPanelRef = useRef<ImperativePanelHandle>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<EditorView | null>(null);
+  const editorScroll = useRef(0);
+  const setMobileView = useCallback((next: MobileView, restoreScroll = true) => {
+    if (mobileView === "editor" && next === "console") editorScroll.current = editorRef.current?.scrollDOM.scrollTop ?? 0;
+    setMobileViewState(next);
+    if (next === "editor" && restoreScroll) requestAnimationFrame(() => {
+      const view = editorRef.current;
+      view?.requestMeasure({ read: () => editorScroll.current, write: (top) => { view.scrollDOM.scrollTop = top; } });
+    });
+  }, [mobileView]);
   const jumpTo = (line: number, column = 1) => {
-    setMobileView("editor");
+    setMobileView("editor", false);
     requestAnimationFrame(() => {
       const view = editorRef.current;
       if (!view) return;
@@ -50,6 +63,18 @@ export function PageClient() {
     });
   };
   const workspaceRef = useRef<HTMLElement>(null);
+  useVisualViewport(workspaceRef);
+  const insertKey = (key: string) => {
+    const view = editorRef.current;
+    if (!view) return;
+    if (key === "Tab") { indentMore(view); view.focus(); return; }
+    const { from, to } = view.state.selection.main;
+    const selected = view.state.sliceDoc(from, to);
+    const pair = key.length === 2;
+    const insert = pair ? key[0] + selected + key[1] : key;
+    view.dispatch({ changes: { from, to, insert }, selection: { anchor: from + 1, head: pair ? from + 1 + selected.length : from + 1 }, scrollIntoView: true });
+    view.focus();
+  };
 
   const toggleTerminal = () => {
     const opening = isMobile ? mobileView !== "console" : !terminalOpen;
@@ -92,7 +117,7 @@ export function PageClient() {
     } else {
       terminalPanelRef.current?.expand();
     }
-  }, [code, run, stop, running, isMobile]);
+  }, [code, run, stop, running, isMobile, setMobileView]);
 
   const handleFormat = useCallback(async () => {
     const result = await formatTypeScript(code);
@@ -127,31 +152,35 @@ export function PageClient() {
   const editorTheme = resolvedTheme === "light" ? "light" : "dark";
 
   return (
-    <main ref={workspaceRef} className="isolate h-dvh bg-background text-foreground overflow-hidden flex flex-col">
+    <main ref={workspaceRef} className="isolate h-dvh pt-[env(safe-area-inset-top)] bg-background text-foreground overflow-hidden flex flex-col">
       {snapshotNotice && <div role="status" className="flex shrink-0 items-center justify-between gap-3 border-b border-rule px-3 py-2 text-base text-muted-foreground sm:text-sm"><p>{snapshotNotice}</p><Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => setSnapshotNotice("")}>Dismiss</Button></div>}
       {isMobile ? (
         <>
-          <Header onThemeToggle={toggleTheme} getShareUrl={getShareUrl} />
+          <Header onThemeToggle={toggleTheme} getShareUrl={getShareUrl} onFormat={handleFormat} />
           <MobileToolbar
             mobileView={mobileView}
             setMobileView={setMobileView}
-            onFormat={handleFormat}
+            keysOpen={keysOpen}
+            onToggleKeys={() => { setKeysOpen(value => !value); setMobileView("editor"); }}
             onRun={runCode}
             running={running}
           />
           <div className="flex-1 min-h-0 flex flex-col">
             <div
               className={cn(
-                "flex-1 min-h-0",
-                mobileView === "editor" ? "block" : "hidden"
+                "flex-1 min-h-0 flex flex-col",
+                mobileView !== "editor" && "hidden"
               )}
             >
+              <div className="min-h-0 flex-1">
               <Editor
                 onCreateEditor={(view) => { editorRef.current = view; }}
                 value={code}
                 onChange={(v) => setCode(v)}
                 theme={editorTheme}
               />
+              </div>
+              {keysOpen && <EditingKeys onInsert={insertKey} />}
             </div>
             <div
               className={cn(
@@ -212,13 +241,15 @@ export function PageClient() {
 function MobileToolbar({
   mobileView,
   setMobileView,
-  onFormat,
+  keysOpen,
+  onToggleKeys,
   onRun,
   running,
 }: {
   mobileView: MobileView;
   setMobileView: (v: MobileView) => void;
-  onFormat: () => void;
+  keysOpen: boolean;
+  onToggleKeys: () => void;
   onRun: () => void;
   running: boolean;
 }) {
@@ -244,8 +275,8 @@ function MobileToolbar({
         ))}
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={onFormat} className="relative h-8 px-2" title="Format code">
-          Format<TouchTarget />
+        <Button type="button" variant="ghost" size="sm" onClick={onToggleKeys} aria-pressed={keysOpen} aria-controls="editing-keys" className="relative h-8 px-2" title="Show editing keys">
+          Keys<TouchTarget />
         </Button>
         <Button type="button" size="sm" onClick={onRun} className="relative h-8 px-3" title="Run (Option/Alt+Enter)" aria-keyshortcuts="Alt+Enter">
           {running ? "Stop" : "Run"}<TouchTarget />

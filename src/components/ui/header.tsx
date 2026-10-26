@@ -40,7 +40,7 @@ export function Header({ onRun, onThemeToggle, getShareUrl, onFormat, onTerminal
       </div>
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         {onFormat && (
-          <Button type="button" variant="ghost" size="sm" onClick={onFormat} className="relative h-8 px-2" title="Format (Ctrl/Cmd+S)">
+          <Button type="button" variant="ghost" size="sm" onClick={onFormat} className="relative hidden h-8 px-2 lg:inline-flex" title="Format (Ctrl/Cmd+S)">
             Format<TouchTarget />
           </Button>
         )}
@@ -55,7 +55,7 @@ export function Header({ onRun, onThemeToggle, getShareUrl, onFormat, onTerminal
           </Button>
         )}
         {getShareUrl && <SharePopover getShareUrl={getShareUrl} />}
-        <SnippetsMenu onThemeToggle={onThemeToggle} />
+        <SnippetsMenu onThemeToggle={onThemeToggle} onFormat={onFormat} />
         <ShortcutsPopover />
         {onThemeToggle && (
           <Button type="button" variant="ghost" size="sm" onClick={onThemeToggle} className="relative hidden h-8 px-2 lg:inline-flex" title="Toggle theme" aria-label="Toggle theme">
