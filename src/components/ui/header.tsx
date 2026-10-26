@@ -24,9 +24,11 @@ interface HeaderProps {
   onThemeToggle?: () => void;
   getShareUrl?: () => string;
   onFormat?: () => void;
+  onTerminalToggle?: () => void;
+  terminalOpen?: boolean;
 }
 
-export function Header({ onRun, onThemeToggle, getShareUrl, onFormat }: HeaderProps) {
+export function Header({ onRun, onThemeToggle, getShareUrl, onFormat, onTerminalToggle, terminalOpen }: HeaderProps) {
   return (
     <header className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-border bg-background px-3 sm:px-4">
       <div className="min-w-0 truncate text-sm font-medium">
@@ -41,6 +43,11 @@ export function Header({ onRun, onThemeToggle, getShareUrl, onFormat }: HeaderPr
         {onRun && (
           <Button type="button" variant="default" size="sm" onClick={onRun} className="relative h-8 px-3" title="Run (Ctrl/Cmd+Enter)">
             Run<TouchTarget />
+          </Button>
+        )}
+        {onTerminalToggle && (
+          <Button type="button" variant="ghost" size="sm" onClick={onTerminalToggle} className="relative h-8 px-2" title="Toggle terminal (Ctrl+` / Cmd+J)" aria-expanded={terminalOpen} aria-controls="terminal-panel" aria-keyshortcuts="Control+` Meta+j">
+            Terminal<TouchTarget />
           </Button>
         )}
         {getShareUrl && <SharePopover getShareUrl={getShareUrl} />}

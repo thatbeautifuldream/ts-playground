@@ -20,7 +20,8 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
+import { useHotkeys } from "@tanstack/react-hotkeys";
+import type { ImperativePanelHandle } from "react-resizable-panels";
 
 
 type MobileView = "editor" | "console";
@@ -41,6 +42,25 @@ export function PageClient() {
 
   const isMobile = useMediaQuery("(max-width: 1023px)");
   const [mobileView, setMobileView] = useState<MobileView>("editor");
+  const [terminalOpen, setTerminalOpen] = useState(true);
+  const terminalPanelRef = useRef<ImperativePanelHandle>(null);
+  const terminalRef = useRef<HTMLDivElement>(null);
+  const workspaceRef = useRef<HTMLElement>(null);
+
+  const toggleTerminal = () => {
+    const opening = isMobile ? mobileView !== "console" : !terminalOpen;
+    if (isMobile) {
+      setMobileView(opening ? "console" : "editor");
+    } else if (opening) {
+      terminalPanelRef.current?.expand();
+    } else {
+      terminalPanelRef.current?.collapse();
+    }
+    requestAnimationFrame(() => {
+      if (opening) terminalRef.current?.focus();
+      else workspaceRef.current?.querySelector<HTMLElement>(".cm-content")?.focus();
+    });
+  };
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -76,14 +96,10 @@ export function PageClient() {
     run(code);
     if (isMobile) {
       setMobileView("console");
+    } else {
+      terminalPanelRef.current?.expand();
     }
   }, [code, clearLogs, run, isMobile]);
-
-  useHotkeys("ctrl+enter, meta+enter", runCode, {
-    preventDefault: true,
-    enableOnFormTags: true,
-    enableOnContentEditable: true,
-  });
 
   const handleFormat = useCallback(async () => {
     const result = await formatTypeScript(code);
@@ -92,11 +108,17 @@ export function PageClient() {
     }
   }, [code, setCode]);
 
-  useHotkeys("ctrl+s, meta+s", handleFormat, {
-    preventDefault: true,
-    enableOnFormTags: true,
-    enableOnContentEditable: true,
-  });
+  useHotkeys(
+    [
+      { hotkey: "Control+Enter", callback: runCode, options: { meta: { name: "Run code" } } },
+      { hotkey: "Meta+Enter", callback: runCode, options: { meta: { name: "Run code" } } },
+      { hotkey: "Control+S", callback: handleFormat, options: { meta: { name: "Format code" } } },
+      { hotkey: "Meta+S", callback: handleFormat, options: { meta: { name: "Format code" } } },
+      { hotkey: "Control+`", callback: toggleTerminal, options: { meta: { name: "Toggle terminal" } } },
+      { hotkey: "Meta+J", callback: toggleTerminal, options: { meta: { name: "Toggle terminal" } } },
+    ],
+    { ignoreInputs: false, capture: true, preventDefault: true, requireReset: true }
+  );
 
   const getShareUrl = useCallback(() => {
     const url = new URL(window.location.href);
@@ -112,7 +134,7 @@ export function PageClient() {
   const editorTheme = resolvedTheme === "light" ? "light" : "dark";
 
   return (
-    <main className="isolate h-dvh bg-background text-foreground overflow-hidden flex flex-col">
+    <main ref={workspaceRef} className="isolate h-dvh bg-background text-foreground overflow-hidden flex flex-col">
       {isMobile ? (
         <>
           <Header onThemeToggle={toggleTheme} getShareUrl={getShareUrl} />
@@ -141,7 +163,7 @@ export function PageClient() {
                 mobileView === "console" ? "block" : "hidden"
               )}
             >
-              <Terminal />
+              <Terminal ref={terminalRef} />
             </div>
           </div>
         </>
@@ -152,9 +174,11 @@ export function PageClient() {
             onThemeToggle={toggleTheme}
             getShareUrl={getShareUrl}
             onFormat={handleFormat}
+            onTerminalToggle={toggleTerminal}
+            terminalOpen={terminalOpen}
           />
           <ResizablePanelGroup direction="vertical" className="flex-1">
-            <ResizablePanel defaultSize={75} minSize={30}>
+            <ResizablePanel defaultSize={75} minSize={30} order={1}>
               <Editor
                 value={code}
                 onChange={(v) => setCode(v)}
@@ -162,10 +186,22 @@ export function PageClient() {
               />
             </ResizablePanel>
 
-            <ResizableHandle />
+            <ResizableHandle className={terminalOpen ? undefined : "hidden"} />
 
-            <ResizablePanel defaultSize={25} minSize={8} maxSize={60}>
-              <Terminal />
+            <ResizablePanel
+              ref={terminalPanelRef}
+              defaultSize={25}
+              minSize={8}
+              maxSize={60}
+              order={2}
+              collapsible
+              collapsedSize={0}
+              inert={!terminalOpen}
+              aria-hidden={!terminalOpen}
+              onCollapse={() => setTerminalOpen(false)}
+              onExpand={() => setTerminalOpen(true)}
+            >
+              <Terminal ref={terminalRef} />
             </ResizablePanel>
           </ResizablePanelGroup>
         </>
@@ -196,6 +232,8 @@ function MobileToolbar({
             type="button"
             onClick={() => setMobileView(view)}
             aria-pressed={mobileView === view}
+            aria-controls={view === "console" ? "terminal-panel" : undefined}
+            title={view === "console" ? "Toggle terminal (Ctrl+` / Cmd+J)" : "Show code"}
             className={cn(
               "relative h-8 shrink-0 rounded-md px-2 text-sm font-medium",
               mobileView === view ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"

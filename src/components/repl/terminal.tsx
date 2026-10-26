@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, type Ref } from "react";
 import { useReplStore, type LogEntry } from "@/stores/repl-store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-export function Terminal() {
+export function Terminal({ ref }: { ref?: Ref<HTMLDivElement> }) {
   const logs = useReplStore((s) => s.logs);
 
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -13,7 +13,7 @@ export function Terminal() {
   }, [logs]);
 
   return (
-    <div className="h-full w-full bg-background">
+    <div ref={ref} id="terminal-panel" role="region" aria-label="Terminal" tabIndex={-1} className="h-full w-full bg-background outline-none">
       <ScrollArea className="h-full">
         <div
           className="px-4 py-3 font-mono"
