@@ -1,3 +1,4 @@
+import type { TypeCompletions } from "./completions";
 import type { CodeDiagnostic } from "./diagnostics";
 import type { TranspileResponse } from "./ts-worker";
 
@@ -7,6 +8,8 @@ export interface TranspileResult {
   errors: string[];
   diagnostics?: CodeDiagnostic[];
   sourceMap?: string;
+  completions?: TypeCompletions | null;
+  details?: string;
 }
 
 type PendingEntry = {
@@ -25,11 +28,11 @@ function getWorker(): Promise<Worker> {
       const readyTimeout = setTimeout(() => { worker.terminate(); workerPromise = null; rejectReady(new Error("Compiler could not start. Try running again.")); }, 15000);
       worker.onmessage = (event: MessageEvent<TranspileResponse | { type: "ready" }>) => {
         if ("type" in event.data) { clearTimeout(readyTimeout); resolve(worker); return; }
-        const { id, success, code, errors, diagnostics, sourceMap } = event.data;
+        const { id, success, code, errors, diagnostics, sourceMap, completions, details } = event.data;
         const entry = pending.get(id);
         if (entry) {
           pending.delete(id);
-          entry.resolve({ success, code, errors, diagnostics, sourceMap });
+          entry.resolve({ success, code, errors, diagnostics, sourceMap, completions, details });
         }
       };
       worker.onerror = (error) => {
@@ -45,13 +48,13 @@ function getWorker(): Promise<Worker> {
   return workerPromise;
 }
 
-async function request(kind: "transpile" | "format" | "diagnose", code: string) {
+async function request(kind: "transpile" | "format" | "diagnose" | "complete" | "completionDetails", code: string, position?: number, label?: string) {
   try {
     const worker = await getWorker();
     const id = ++requestCounter;
     return await new Promise<TranspileResult>((resolve, reject) => {
       pending.set(id, { resolve, reject });
-      worker.postMessage({ id, kind, code });
+      worker.postMessage({ id, kind, code, position, label });
     });
   } catch (error) {
     return {
@@ -75,3 +78,6 @@ export function formatTypeScript(sourceCode: string): Promise<TranspileResult> {
 }
 
 export function diagnoseTypeScript(code: string) { return request("diagnose", code); }
+
+export function completeTypeScript(code: string, position: number) { return request("complete", code, position); }
+export function getCompletionDetails(code: string, position: number, label: string) { return request("completionDetails", code, position, label); }

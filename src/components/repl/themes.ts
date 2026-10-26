@@ -41,6 +41,9 @@ const editorChrome = EditorView.theme({
   ".cm-tooltip-autocomplete > ul": { fontFamily: "var(--font-google-sans-code), monospace", padding: "4px", fontSize: "13px" },
   ".cm-tooltip-autocomplete > ul > li": { padding: "3px 8px", borderRadius: "6px" },
   ".cm-tooltip-autocomplete > ul > li[aria-selected]": { background: "var(--accent)", color: "var(--foreground)" },
+  ".cm-completionInfo": { maxWidth: "min(28rem, calc(100vw - 2rem))", maxHeight: "14rem", overflow: "auto", whiteSpace: "pre-wrap", padding: "8px 12px" },
+  // On narrow screens, keep documentation from covering tappable suggestions.
+  ".cm-completionInfo-right-narrow, .cm-completionInfo-left-narrow": { display: "none" },
   ".cm-completionIcon": { display: "none" },
   ".cm-completionDetail": { color: "var(--muted-foreground)", marginLeft: "8px" },
   ".cm-searchMatch": { backgroundColor: "var(--accent)", outline: "1px solid var(--input)" },

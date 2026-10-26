@@ -1,27 +1,42 @@
 /// <reference lib="webworker" />
 
 import ts from "typescript";
-import { diagnose } from "./type-service";
+import { diagnose, complete, completionDetails } from "./type-service";
+import type { TypeCompletions } from "./completions";
 import type { CodeDiagnostic } from "./diagnostics";
 
 export interface TranspileRequest {
   id: number;
-  kind: "transpile" | "format" | "diagnose";
+  kind: "transpile" | "format" | "diagnose" | "complete" | "completionDetails";
   code: string;
+  position?: number;
+  label?: string;
 }
 
 export interface TranspileResponse {
   id: number;
-  kind: "transpile" | "format" | "diagnose";
+  kind: "transpile" | "format" | "diagnose" | "complete" | "completionDetails";
   success: boolean;
   code: string;
   errors: string[];
   diagnostics?: CodeDiagnostic[];
   sourceMap?: string;
+  completions?: TypeCompletions | null;
+  details?: string;
 }
 
 self.onmessage = async (event: MessageEvent<TranspileRequest>) => {
   const { id, kind, code } = event.data;
+  if (kind === "complete" || kind === "completionDetails") {
+    try {
+      const position = event.data.position ?? code.length;
+      const result = kind === "complete" ? { completions: await complete(code, position) } : { details: await completionDetails(code, position, event.data.label ?? "") };
+      self.postMessage({ id, kind, success: true, code, errors: [], ...result });
+    } catch (error) {
+      self.postMessage({ id, kind, success: false, code, errors: [String(error)] });
+    }
+    return;
+  }
   if (kind === "diagnose") {
     try {
       const diagnostics = await diagnose(code);

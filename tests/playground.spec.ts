@@ -208,3 +208,49 @@ test("empty and invalid snapshot links do not resurrect or erase a local draft",
   await page.getByRole("button", { name: "Snippets", exact: true }).click();
   await expect(page.getByRole("button", { name: /console.log\("keep me"\)/ })).toBeVisible();
 });
+
+test("array member completions filter and accept with Tab", async ({ page }) => {
+  await page.goto("/");
+  const editor = page.locator(".cm-content");
+  await editor.fill("const numbers = [1, 2, 3];\nnumbers");
+  await editor.pressSequentially(".");
+  const list = page.getByRole("listbox");
+  await expect(list.getByRole("option", { name: "map", exact: true })).toBeVisible({ timeout: 15000 });
+  await expect(list.getByRole("option", { name: "filter", exact: true })).toBeVisible();
+  await expect(list.getByRole("option", { name: "reduce", exact: true })).toBeAttached();
+  await editor.pressSequentially("ma");
+  await expect(list.getByRole("option", { name: "map", exact: true })).toBeVisible();
+  await editor.press("Tab");
+  await expect(editor).toContainText("numbers.map");
+  await expect(list).not.toBeVisible();
+  await editor.press("Control+z");
+  await expect(editor).toContainText("numbers.ma");
+  await editor.press("Escape");
+  await editor.press("Control+Space");
+  await expect(list.getByRole("option", { name: "map", exact: true })).toBeVisible();
+});
+
+test("completions respect inferred types and user-defined members on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
+  await page.goto("/");
+  const editor = page.locator(".cm-content");
+  await editor.fill('const greeting = "hello";\ngreeting');
+  await editor.pressSequentially(".toU");
+  await expect(page.getByRole("option", { name: "toUpperCase", exact: true })).toBeVisible({ timeout: 15000 });
+  await editor.press("Enter");
+  await expect(editor).toContainText("greeting.toUpperCase");
+  await editor.fill('const user: { name: string; age: number } = { name: "Ada", age: 36 };\nuser');
+  await editor.pressSequentially(".");
+  await expect(page.getByRole("option", { name: "name", exact: true })).toBeVisible();
+  await expect(page.getByRole("option", { name: "age", exact: true })).toBeVisible();
+  await page.getByRole("option", { name: "name", exact: true }).click();
+  await expect(editor).toContainText("user.name");
+  await expect(page.getByRole("listbox")).not.toBeVisible();
+  await editor.fill("const numbers = [1, 2, 3];\nnumbers");
+  await editor.pressSequentially(".");
+  await expect(page.getByRole("option", { name: "map", exact: true })).toBeVisible();
+  await page.screenshot({ animations: "disabled", path: "/tmp/playground-completions-mobile.png" });
+  await editor.press("Escape");
+  await expect(page.getByRole("listbox")).not.toBeVisible();
+});

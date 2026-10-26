@@ -3,7 +3,9 @@
 import { useMemo } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { EditorView, keymap } from "@codemirror/view";
-import { EditorState } from "@codemirror/state";
+import { autocompletion, acceptCompletion } from "@codemirror/autocomplete";
+import { typescriptCompletion } from "@/lib/typescript-completion";
+import { EditorState, Prec } from "@codemirror/state";
 import { javascript } from "@codemirror/lang-javascript";
 import { indentWithTab } from "@codemirror/commands";
 import { linter } from "@codemirror/lint";
@@ -22,6 +24,8 @@ export function Editor({ value, onChange, theme, onCreateEditor }: EditorProps) 
   const extensions = useMemo(
     () => [
       javascript({ typescript: true, jsx: true }),
+      autocompletion({ override: [typescriptCompletion], icons: false }),
+      Prec.highest(keymap.of([{ key: "Tab", run: acceptCompletion }])),
       linter(async (view) => {
         const code = view.state.doc.toString();
         const result = await diagnoseTypeScript(code);

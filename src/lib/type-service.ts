@@ -1,4 +1,5 @@
 import ts from "typescript";
+import type { TypeCompletions } from "./completions";
 import type { CodeDiagnostic } from "./diagnostics";
 
 const files = new Map<string, string>();
@@ -17,7 +18,7 @@ const name = "playground.tsx";
 const service = ts.createLanguageService({
   getCompilationSettings: () => options,
   getScriptFileNames: () => [name],
-  getScriptVersion: () => String(version),
+  getScriptVersion: (file) => file === name ? String(version) : "0",
   getScriptSnapshot: (file) => {
     const content = file === name ? source : files.get(file.replace(/^.*\//, ""));
     return content === undefined ? undefined : ts.ScriptSnapshot.fromString(content);
@@ -40,11 +41,18 @@ async function loadLibraries() {
   }
   await Promise.all(options.lib!.map(load));
 }
-export async function diagnose(code: string): Promise<CodeDiagnostic[]> {
+async function ensureLibraries() {
   libraries ??= loadLibraries().catch(error => { libraries = undefined; throw error; });
   await libraries;
-  source = code;
-  version++;
+}
+
+function updateSource(code: string) {
+  if (source !== code) { source = code; version++; }
+}
+
+export async function diagnose(code: string): Promise<CodeDiagnostic[]> {
+  await ensureLibraries();
+  updateSource(code);
   return [...service.getSyntacticDiagnostics(name), ...service.getSemanticDiagnostics(name)].map(diagnostic => {
     const from = diagnostic.start ?? 0;
     const position = diagnostic.file?.getLineAndCharacterOfPosition(from);
@@ -55,4 +63,37 @@ export async function diagnose(code: string): Promise<CodeDiagnostic[]> {
       severity: diagnostic.category === ts.DiagnosticCategory.Warning ? "warning" : "error",
     };
   });
+}
+
+
+export async function complete(code: string, position: number): Promise<TypeCompletions | null> {
+  await ensureLibraries();
+  updateSource(code);
+  const result = service.getCompletionsAtPosition(name, position, {
+    includeCompletionsForModuleExports: false,
+    includeCompletionsWithInsertText: true,
+    includeCompletionsWithSnippetText: false,
+  });
+  if (!result) return null;
+  const prefix = code.slice(0, position).match(/[$\w]*$/)?.[0] ?? "";
+  const from = result.optionalReplacementSpan?.start ?? position - prefix.length;
+  return {
+    from,
+    to: result.optionalReplacementSpan ? from + result.optionalReplacementSpan.length : position,
+    options: result.entries.filter(entry => !entry.isSnippet).map(entry => ({
+      label: entry.name,
+      insertText: entry.insertText ?? entry.name,
+      sortText: entry.sortText,
+      replacement: entry.replacementSpan,
+      type: entry.kind === ts.ScriptElementKind.memberFunctionElement ? "method" : entry.kind === ts.ScriptElementKind.functionElement ? "function" : entry.kind === ts.ScriptElementKind.memberVariableElement || entry.kind === ts.ScriptElementKind.memberGetAccessorElement ? "property" : entry.kind === ts.ScriptElementKind.keyword ? "keyword" : "variable",
+    })),
+  };
+}
+
+export async function completionDetails(code: string, position: number, label: string): Promise<string> {
+  await ensureLibraries();
+  updateSource(code);
+  const details = service.getCompletionEntryDetails(name, position, label, undefined, undefined, undefined, undefined);
+  if (!details) return "";
+  return [ts.displayPartsToString(details.displayParts), ts.displayPartsToString(details.documentation)].filter(Boolean).join("\n\n");
 }
