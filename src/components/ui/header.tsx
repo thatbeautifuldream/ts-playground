@@ -1,16 +1,7 @@
 "use client";
 
-import {
-  CheckIcon,
-  CopyIcon,
-  MoonIcon,
-  PlayIcon,
-  ShareIcon,
-  SunIcon,
-  WandSparklesIcon,
-} from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import GitHubButton from "react-github-btn";
 import { Button } from "./button";
 import {
   InputGroup,
@@ -37,68 +28,25 @@ interface HeaderProps {
 
 export function Header({ onRun, onThemeToggle, getShareUrl, onFormat }: HeaderProps) {
   return (
-    <header className="flex items-center justify-between h-14 lg:h-12 px-4 lg:px-5 bg-background border-b border-border flex-shrink-0">
-      <div className="flex items-center space-x-2 min-w-0">
-        <span className="text-sm font-medium text-foreground truncate">
-          TS Playground
-        </span>
+    <header className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-border bg-background px-3 sm:px-4">
+      <div className="min-w-0 truncate text-sm font-medium">
+        <Link href="/" aria-label="Homepage">TS Playground</Link>
       </div>
-
-      <div className="flex items-center gap-1">
-        <div className="hidden lg:flex items-center text-xs -mb-1">
-          <GitHubButton
-            href="https://github.com/thatbeautifuldream/playground"
-            data-color-scheme="no-preference: light; light: light; dark: dark;"
-            data-icon="octicon-star"
-            data-show-count="true"
-            aria-label="Star thatbeautifuldream/playground on GitHub"
-          >
-            Star
-          </GitHubButton>
-        </div>
-
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         {onFormat && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onFormat}
-            className="relative h-9 lg:h-8 px-3 lg:px-2.5 text-sm lg:text-xs cursor-pointer"
-            title="Format (Ctrl/Cmd+S)"
-          >
-            <WandSparklesIcon className="size-4 lg:size-3.5 lg:mr-1" />
-            <span className="hidden lg:inline">Format</span>
-            <TouchTarget />
+          <Button type="button" variant="ghost" size="sm" onClick={onFormat} className="relative h-8 px-2" title="Format (Ctrl/Cmd+S)">
+            Format<TouchTarget />
           </Button>
         )}
-
         {onRun && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onRun}
-            className="relative h-9 lg:h-8 px-3 lg:px-2.5 text-sm lg:text-xs cursor-pointer"
-            title="Run (Ctrl/Cmd+Enter)"
-          >
-            <PlayIcon className="size-4 lg:size-3.5 lg:mr-1" />
-            <span className="hidden lg:inline">Run</span>
-            <TouchTarget />
+          <Button type="button" variant="default" size="sm" onClick={onRun} className="relative h-8 px-3" title="Run (Ctrl/Cmd+Enter)">
+            Run<TouchTarget />
           </Button>
         )}
-
         {getShareUrl && <SharePopover getShareUrl={getShareUrl} />}
-
         {onThemeToggle && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onThemeToggle}
-            className="relative h-9 w-9 lg:h-8 lg:w-8 cursor-pointer"
-            title="Toggle theme"
-          >
-            <SunIcon className="size-4 lg:size-3.5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <MoonIcon className="absolute size-4 lg:size-3.5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-            <TouchTarget />
+          <Button type="button" variant="ghost" size="sm" onClick={onThemeToggle} className="relative h-8 px-2" title="Toggle theme" aria-label="Toggle theme">
+            Theme<TouchTarget />
           </Button>
         )}
       </div>
@@ -141,11 +89,11 @@ function SharePopover({ getShareUrl }: { getShareUrl: () => string }) {
         <Button
           variant="ghost"
           size="sm"
-          className="relative h-9 lg:h-8 px-3 lg:px-2.5 text-sm lg:text-xs cursor-pointer"
+          className="relative h-8 px-2"
+          type="button"
           title="Share"
         >
-          <ShareIcon className="size-4 lg:size-3.5 lg:mr-1" />
-          <span className="hidden lg:inline">Share</span>
+          Share
           <TouchTarget />
         </Button>
       </PopoverTrigger>
@@ -156,7 +104,7 @@ function SharePopover({ getShareUrl }: { getShareUrl: () => string }) {
         <PopoverHeader>
           <PopoverTitle>Share playground</PopoverTitle>
           <PopoverDescription>
-            Anyone with this link can view and run your code
+            Anyone with this link can view and run your code.
           </PopoverDescription>
         </PopoverHeader>
         <InputGroup>
@@ -170,11 +118,13 @@ function SharePopover({ getShareUrl }: { getShareUrl: () => string }) {
           />
           <InputGroupAddon align="inline-end">
             <InputGroupButton
-              size="icon-xs"
+              size="sm"
+              className="relative min-w-16"
               onClick={handleCopy}
               aria-label={copied ? "Copied" : "Copy link"}
             >
-              {copied ? <CheckIcon /> : <CopyIcon />}
+              {copied ? "Copied" : "Copy"}
+              <TouchTarget />
             </InputGroupButton>
           </InputGroupAddon>
         </InputGroup>

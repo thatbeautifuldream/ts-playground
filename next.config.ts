@@ -4,7 +4,6 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   experimental: {
     optimizePackageImports: [
-      "lucide-react",
       "@codemirror/view",
       "@codemirror/state",
       "@codemirror/commands",

@@ -31,7 +31,8 @@ export function Editor({ value, onChange, theme }: EditorProps) {
         },
         ".cm-content": { padding: "16px 0" },
         ".cm-line": { padding: "0 12px" },
-        ".cm-gutters": { padding: "16px 0 16px 8px" },
+        // CodeMirror measures the content inset and offsets gutters itself.
+        ".cm-gutters": { paddingLeft: "8px" },
         "&.cm-focused": { outline: "none" },
       }),
     ],
@@ -49,7 +50,7 @@ export function Editor({ value, onChange, theme }: EditorProps) {
       basicSetup={{
         lineNumbers: true,
         highlightActiveLineGutter: true,
-        foldGutter: true,
+        foldGutter: false,
         bracketMatching: true,
         closeBrackets: true,
         autocompletion: true,

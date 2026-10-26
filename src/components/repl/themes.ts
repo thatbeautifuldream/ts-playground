@@ -41,6 +41,7 @@ const editorChrome = EditorView.theme({
   ".cm-tooltip-autocomplete > ul": { fontFamily: "var(--font-google-sans-code), monospace", padding: "4px", fontSize: "13px" },
   ".cm-tooltip-autocomplete > ul > li": { padding: "3px 8px", borderRadius: "6px" },
   ".cm-tooltip-autocomplete > ul > li[aria-selected]": { background: "var(--accent)", color: "var(--foreground)" },
+  ".cm-completionIcon": { display: "none" },
   ".cm-completionDetail": { color: "var(--muted-foreground)", marginLeft: "8px" },
   ".cm-searchMatch": { backgroundColor: "var(--accent)", outline: "1px solid var(--input)" },
   ".cm-searchMatch.cm-searchMatch-selected": { backgroundColor: "var(--muted)", outline: "1px solid var(--ring)" },

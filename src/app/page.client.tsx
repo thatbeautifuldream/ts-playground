@@ -21,12 +21,7 @@ import { useTheme } from "next-themes";
 import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
-import {
-  CodeIcon,
-  PlayIcon,
-  SquareTerminalIcon,
-  WandSparklesIcon,
-} from "lucide-react";
+
 
 type MobileView = "editor" | "console";
 
@@ -117,7 +112,7 @@ export function PageClient() {
   const editorTheme = resolvedTheme === "light" ? "light" : "dark";
 
   return (
-    <main className="h-dvh bg-background text-foreground overflow-hidden flex flex-col">
+    <main className="isolate h-dvh bg-background text-foreground overflow-hidden flex flex-col">
       {isMobile ? (
         <>
           <Header onThemeToggle={toggleTheme} getShareUrl={getShareUrl} />
@@ -193,62 +188,32 @@ function MobileToolbar({
   onRun: () => void;
 }) {
   return (
-    <div className="flex items-center gap-1.5 h-12 px-2 border-b border-border bg-background flex-shrink-0">
-      <div className="flex items-center rounded-lg bg-background p-0.5 border border-border">
-        <button
-          type="button"
-          onClick={() => setMobileView("editor")}
-          aria-pressed={mobileView === "editor"}
-          className={cn(
-            "inline-flex items-center gap-1.5 px-3 h-9 text-sm rounded-md transition-colors",
-            mobileView === "editor"
-              ? "bg-accent font-medium text-foreground"
-              : "text-muted-foreground"
-          )}
-        >
-          <CodeIcon className="size-4" />
-          Code
-        </button>
-        <button
-          type="button"
-          onClick={() => setMobileView("console")}
-          aria-pressed={mobileView === "console"}
-          className={cn(
-            "inline-flex items-center gap-1.5 px-3 h-9 text-sm rounded-md transition-colors",
-            mobileView === "console"
-              ? "bg-accent font-medium text-foreground"
-              : "text-muted-foreground"
-          )}
-        >
-          <SquareTerminalIcon className="size-4" />
-          Console
-        </button>
+    <div className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-border px-3">
+      <div className="flex min-w-0 items-center gap-2" role="group" aria-label="Workspace view">
+        {(["editor", "console"] as const).map((view) => (
+          <button
+            key={view}
+            type="button"
+            onClick={() => setMobileView(view)}
+            aria-pressed={mobileView === view}
+            className={cn(
+              "relative h-8 shrink-0 rounded-md px-2 text-sm font-medium",
+              mobileView === view ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {view === "editor" ? "Code" : "Console"}
+            <TouchTarget />
+          </button>
+        ))}
       </div>
-
-      <div className="flex-1" />
-
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onFormat}
-        className="relative h-9 w-9 p-0 cursor-pointer"
-        title="Format code"
-      >
-        <WandSparklesIcon className="size-4" />
-        <span className="sr-only">Format</span>
-        <TouchTarget />
-      </Button>
-
-      <Button
-        variant="default"
-        size="sm"
-        onClick={onRun}
-        className="relative h-9 px-4 text-sm gap-1.5 cursor-pointer"
-        title="Run code"
-      >
-        <PlayIcon className="size-4" />
-        Run
-      </Button>
+      <div className="flex shrink-0 items-center gap-2">
+        <Button type="button" variant="ghost" size="sm" onClick={onFormat} className="relative h-8 px-2" title="Format code">
+          Format<TouchTarget />
+        </Button>
+        <Button type="button" size="sm" onClick={onRun} className="relative h-8 px-3" title="Run code">
+          Run<TouchTarget />
+        </Button>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-const VERSION = "v4";
+const VERSION = "v5";
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 
@@ -48,9 +48,7 @@ self.addEventListener("fetch", (event) => {
 
   const isStatic =
     url.pathname.startsWith("/_next/static/") ||
-    url.pathname.startsWith("/icon") ||
-    url.pathname === "/manifest.webmanifest" ||
-    url.pathname === "/favicon.ico";
+    url.pathname === "/manifest.webmanifest";
 
   if (isStatic) {
     event.respondWith(
