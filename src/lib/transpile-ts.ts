@@ -1,9 +1,12 @@
+import type { CodeDiagnostic } from "./diagnostics";
 import type { TranspileResponse } from "./ts-worker";
 
 export interface TranspileResult {
   success: boolean;
   code: string;
   errors: string[];
+  diagnostics?: CodeDiagnostic[];
+  sourceMap?: string;
 }
 
 type PendingEntry = {
@@ -22,11 +25,11 @@ function getWorker(): Promise<Worker> {
       worker.onmessage = (
         event: MessageEvent<TranspileResponse>
       ) => {
-        const { id, success, code, errors } = event.data;
+        const { id, success, code, errors, diagnostics, sourceMap } = event.data;
         const entry = pending.get(id);
         if (entry) {
           pending.delete(id);
-          entry.resolve({ success, code, errors });
+          entry.resolve({ success, code, errors, diagnostics, sourceMap });
         }
       };
       worker.onerror = (error) => {
@@ -42,7 +45,7 @@ function getWorker(): Promise<Worker> {
   return workerPromise;
 }
 
-async function request(kind: "transpile" | "format", code: string) {
+async function request(kind: "transpile" | "format" | "diagnose", code: string) {
   try {
     const worker = await getWorker();
     const id = ++requestCounter;
@@ -70,3 +73,5 @@ export function transpileTypeScript(sourceCode: string): Promise<TranspileResult
 export function formatTypeScript(sourceCode: string): Promise<TranspileResult> {
   return request("format", sourceCode);
 }
+
+export function diagnoseTypeScript(code: string) { return request("diagnose", code); }

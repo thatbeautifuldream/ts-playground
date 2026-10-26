@@ -21,6 +21,7 @@ import { useTheme } from "next-themes";
 import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHotkeys } from "@tanstack/react-hotkeys";
+import type { EditorView } from "@codemirror/view";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 
 
@@ -44,6 +45,17 @@ export function PageClient() {
   const [terminalOpen, setTerminalOpen] = useState(true);
   const terminalPanelRef = useRef<ImperativePanelHandle>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<EditorView | null>(null);
+  const jumpTo = (line: number, column = 1) => {
+    setMobileView("editor");
+    requestAnimationFrame(() => {
+      const view = editorRef.current;
+      if (!view) return;
+      const target = view.state.doc.line(Math.min(line, view.state.doc.lines));
+      view.dispatch({ selection: { anchor: Math.min(target.to, target.from + column - 1) }, scrollIntoView: true });
+      view.focus();
+    });
+  };
   const workspaceRef = useRef<HTMLElement>(null);
 
   const toggleTerminal = () => {
@@ -149,6 +161,7 @@ export function PageClient() {
               )}
             >
               <Editor
+                onCreateEditor={(view) => { editorRef.current = view; }}
                 value={code}
                 onChange={(v) => setCode(v)}
                 theme={editorTheme}
@@ -160,7 +173,7 @@ export function PageClient() {
                 mobileView === "console" ? "block" : "hidden"
               )}
             >
-              <Terminal ref={terminalRef} />
+              <Terminal ref={terminalRef} onNavigate={jumpTo} />
             </div>
           </div>
         </>
@@ -178,6 +191,7 @@ export function PageClient() {
           <ResizablePanelGroup direction="vertical" className="flex-1">
             <ResizablePanel defaultSize={75} minSize={30} order={1}>
               <Editor
+                onCreateEditor={(view) => { editorRef.current = view; }}
                 value={code}
                 onChange={(v) => setCode(v)}
                 theme={editorTheme}
@@ -199,7 +213,7 @@ export function PageClient() {
               onCollapse={() => setTerminalOpen(false)}
               onExpand={() => setTerminalOpen(true)}
             >
-              <Terminal ref={terminalRef} />
+              <Terminal ref={terminalRef} onNavigate={jumpTo} />
             </ResizablePanel>
           </ResizablePanelGroup>
         </>

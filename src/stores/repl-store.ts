@@ -1,13 +1,16 @@
 "use client";
 
+import type { CodeDiagnostic } from "@/lib/diagnostics";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
-export type LogEntry = { type: "log" | "error"; message: string };
+export type LogEntry = { type: "log" | "error"; message: string; line?: number; column?: number; source?: string };
 
 export type Execution = { status: "idle" | "running" | "success" | "error" | "stopped"; duration: number };
 
 type ReplState = {
+  diagnostics: CodeDiagnostic[];
+  setDiagnostics: (diagnostics: CodeDiagnostic[]) => void;
   execution: Execution;
   setExecution: (execution: Execution) => void;
   code: string;
@@ -39,6 +42,8 @@ console.log("Doubled:", doubled);
 export const useReplStore = create<ReplState>()(
   persist(
     (set, get) => ({
+      diagnostics: [],
+      setDiagnostics: (diagnostics) => set({ diagnostics }),
       execution: { status: "idle", duration: 0 },
       setExecution: (execution) => set({ execution }),
       code: defaultSnippet,

@@ -4,8 +4,9 @@ import { useRef, useEffect, type Ref } from "react";
 import { useReplStore, type LogEntry } from "@/stores/repl-store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-export function Terminal({ ref }: { ref?: Ref<HTMLDivElement> }) {
+export function Terminal({ ref, onNavigate }: { ref?: Ref<HTMLDivElement>; onNavigate?: (line: number, column?: number) => void }) {
   const logs = useReplStore((s) => s.logs);
+  const diagnostics = useReplStore((s) => s.diagnostics);
   const execution = useReplStore((s) => s.execution);
 
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -26,15 +27,17 @@ export function Terminal({ ref }: { ref?: Ref<HTMLDivElement> }) {
             lineHeight: "1.6",
           }}
         >
+          {diagnostics.length > 0 && <div className="flex flex-col gap-2 pb-3" aria-label="TypeScript problems">
+            {diagnostics.map((diagnostic, index) => <button type="button" key={index} onClick={() => onNavigate?.(diagnostic.line, diagnostic.column)} className="text-left text-destructive underline decoration-destructive/30 underline-offset-4">
+              Line {diagnostic.line}:{diagnostic.column} · {diagnostic.message}
+            </button>)}
+          </div>}
           {logs.length === 0 ? (
-            <div className="text-faint">
-              {execution.status === "success" ? "Finished with no output." : execution.status === "running" ? "Waiting for output…" : <span className="lg:hidden">Tap Run to execute code</span>}
-              <span className={execution.status === "idle" ? "hidden lg:inline" : "hidden"}>
-                Option/Alt + Enter to run code
-              </span>
+            <div className="text-muted-foreground">
+              {execution.status === "success" ? "Finished with no output." : execution.status === "running" ? "Waiting for output…" : execution.status === "idle" ? "Run code to see output." : "No output."}
             </div>
           ) : (
-            logs.map((l, i) => <LogLine key={i} entry={l} />)
+            logs.map((l, i) => <LogLine key={i} entry={l} onNavigate={onNavigate} />)
           )}
           <div ref={endRef} />
         </div>
@@ -43,10 +46,13 @@ export function Terminal({ ref }: { ref?: Ref<HTMLDivElement> }) {
   );
 }
 
-function LogLine({ entry }: { entry: LogEntry }) {
+function LogLine({ entry, onNavigate }: { entry: LogEntry; onNavigate?: (line: number, column?: number) => void }) {
+  const code = useReplStore((s) => s.code);
   const cls =
     entry.type === "error"
       ? "whitespace-pre-wrap break-words text-destructive"
       : "whitespace-pre-wrap break-words";
-  return <div className={cls}>{entry.message}</div>;
+  return <div className={cls}>{entry.message}
+    {entry.line && entry.source === code && <button type="button" className="px-2 underline underline-offset-4" onClick={() => onNavigate?.(entry.line!, entry.column)}>Line {entry.line}:{entry.column}</button>}
+  </div>;
 }

@@ -1,23 +1,36 @@
 /// <reference lib="webworker" />
 
 import ts from "typescript";
+import { diagnose } from "./type-service";
+import type { CodeDiagnostic } from "./diagnostics";
 
 export interface TranspileRequest {
   id: number;
-  kind: "transpile" | "format";
+  kind: "transpile" | "format" | "diagnose";
   code: string;
 }
 
 export interface TranspileResponse {
   id: number;
-  kind: "transpile" | "format";
+  kind: "transpile" | "format" | "diagnose";
   success: boolean;
   code: string;
   errors: string[];
+  diagnostics?: CodeDiagnostic[];
+  sourceMap?: string;
 }
 
-self.onmessage = (event: MessageEvent<TranspileRequest>) => {
+self.onmessage = async (event: MessageEvent<TranspileRequest>) => {
   const { id, kind, code } = event.data;
+  if (kind === "diagnose") {
+    try {
+      const diagnostics = await diagnose(code);
+      self.postMessage({ id, kind, success: true, code, errors: [], diagnostics });
+    } catch (error) {
+      self.postMessage({ id, kind, success: false, code, errors: [String(error)], diagnostics: [] });
+    }
+    return;
+  }
   const response: TranspileResponse =
     kind === "transpile"
       ? { id, kind, ...transpile(code) }
@@ -29,6 +42,8 @@ function transpile(sourceCode: string): Omit<TranspileResponse, "id" | "kind"> {
   try {
     const result = ts.transpileModule(sourceCode, {
       compilerOptions: {
+        sourceMap: true,
+        inlineSources: true,
         target: ts.ScriptTarget.ES2020,
         module: ts.ModuleKind.ESNext,
         jsx: ts.JsxEmit.React,
@@ -38,6 +53,7 @@ function transpile(sourceCode: string): Omit<TranspileResponse, "id" | "kind"> {
         skipLibCheck: true,
         noEmit: false,
       },
+      fileName: "playground.tsx",
       reportDiagnostics: true,
     });
 
@@ -61,6 +77,7 @@ function transpile(sourceCode: string): Omit<TranspileResponse, "id" | "kind"> {
     return {
       success: errors.length === 0,
       code: result.outputText,
+      sourceMap: result.sourceMapText,
       errors,
     };
   } catch (error) {

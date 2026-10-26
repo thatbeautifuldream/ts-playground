@@ -6,18 +6,30 @@ import { EditorView, keymap } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
 import { javascript } from "@codemirror/lang-javascript";
 import { indentWithTab } from "@codemirror/commands";
+import { linter } from "@codemirror/lint";
+import { diagnoseTypeScript } from "@/lib/transpile-ts";
+import { useReplStore } from "@/stores/repl-store";
 import { lightTheme, darkTheme } from "./themes";
 
 interface EditorProps {
   value: string;
   onChange: (value: string) => void;
   theme: "light" | "dark";
+  onCreateEditor?: (view: EditorView) => void;
 }
 
-export function Editor({ value, onChange, theme }: EditorProps) {
+export function Editor({ value, onChange, theme, onCreateEditor }: EditorProps) {
   const extensions = useMemo(
     () => [
       javascript({ typescript: true, jsx: true }),
+      linter(async (view) => {
+        const code = view.state.doc.toString();
+        const result = await diagnoseTypeScript(code);
+        if (view.state.doc.toString() !== code) return [];
+        const diagnostics = result.diagnostics ?? [];
+        useReplStore.getState().setDiagnostics(diagnostics);
+        return diagnostics;
+      }, { delay: 450 }),
       EditorView.lineWrapping,
       EditorState.tabSize.of(2),
       keymap.of([indentWithTab]),
@@ -41,6 +53,8 @@ export function Editor({ value, onChange, theme }: EditorProps) {
 
   return (
     <CodeMirror
+      onCreateEditor={onCreateEditor}
+      aria-label="TypeScript editor"
       value={value}
       onChange={onChange}
       theme={theme === "dark" ? darkTheme : lightTheme}

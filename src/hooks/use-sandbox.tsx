@@ -1,5 +1,6 @@
 "use client";
 
+import { TraceMap, originalPositionFor } from "@jridgewell/trace-mapping";
 import { useCallback, useEffect, useRef } from "react";
 import { useReplStore } from "@/stores/repl-store";
 import { transpileTypeScript } from "@/lib/transpile-ts";
@@ -44,7 +45,12 @@ export function useSandbox() {
     worker.onmessage = ({ data }) => {
       if (id !== generation.current) return;
       if (data.type === "done") complete(data.payload === "error" ? "error" : "success");
-      else if (data.type === "log" || data.type === "error") store.pushLog({ type: data.type, message: String(data.payload) });
+      else if (data.type === "log" || data.type === "error") {
+        const message = String(data.payload);
+        const match = message.match(/playground\.js:(\d+):(\d+)/);
+        const position = match && result.sourceMap ? originalPositionFor(new TraceMap(result.sourceMap), { line: Number(match[1]), column: Number(match[2]) - 1 }) : null;
+        store.pushLog({ type: data.type, message, source: code, line: position?.line ?? undefined, column: position?.column == null ? undefined : position.column + 1 });
+      }
     };
     worker.onerror = (event) => {
       if (id !== generation.current) return;
