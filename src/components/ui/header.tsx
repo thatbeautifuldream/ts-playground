@@ -1,5 +1,6 @@
 "use client";
 
+import { SnippetsMenu } from "@/components/repl/snippets-menu";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "./button";
@@ -52,8 +53,9 @@ export function Header({ onRun, onThemeToggle, getShareUrl, onFormat, onTerminal
           </Button>
         )}
         {getShareUrl && <SharePopover getShareUrl={getShareUrl} />}
+        <SnippetsMenu onThemeToggle={onThemeToggle} />
         {onThemeToggle && (
-          <Button type="button" variant="ghost" size="sm" onClick={onThemeToggle} className="relative h-8 px-2" title="Toggle theme" aria-label="Toggle theme">
+          <Button type="button" variant="ghost" size="sm" onClick={onThemeToggle} className="relative hidden h-8 px-2 lg:inline-flex" title="Toggle theme" aria-label="Toggle theme">
             Theme<TouchTarget />
           </Button>
         )}

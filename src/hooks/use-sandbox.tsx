@@ -24,7 +24,13 @@ export function useSandbox() {
     generation.current++;
     complete("stopped");
   }, [complete]);
-  useEffect(() => () => { generation.current++; dispose(); }, [dispose]);
+  const cancelPending = useCallback(() => { generation.current++; dispose(); }, [dispose]);
+  useEffect(() => {
+    const unsubscribe = useReplStore.subscribe((state, previous) => {
+      if (state.execution.status === "idle" && previous.execution.status === "running") { cancelPending(); }
+    });
+    return () => { unsubscribe(); cancelPending(); };
+  }, [cancelPending]);
 
   const run = useCallback(async (code: string) => {
     const id = ++generation.current;

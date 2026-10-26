@@ -75,20 +75,20 @@ export function PageClient() {
 
   useEffect(() => {
     if (isInitialMount.current) {
-      if (urlCode) {
-        setCode(urlCode);
+      if (urlCode !== null) {
+        useReplStore.getState().replaceCode(urlCode);
       }
       isInitialMount.current = false;
     }
   }, [urlCode, setCode]);
 
   useEffect(() => {
-    if (!isInitialMount.current && code && code !== urlCode) {
+    if (!isInitialMount.current && code !== (urlCode ?? "")) {
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
       updateTimeoutRef.current = setTimeout(() => {
-        setUrlCode(code);
+        setUrlCode(code || null);
       }, 500);
     }
     return () => {

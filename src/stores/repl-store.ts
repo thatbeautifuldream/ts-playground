@@ -9,7 +9,13 @@ export type LogEntry = { type: "log" | "error" | "warn" | "info" | "debug"; valu
 
 export type Execution = { status: "idle" | "running" | "success" | "error" | "stopped"; duration: number };
 
+export type SavedSnippet = { id: string; title: string; code: string; updatedAt: number };
+
 type ReplState = {
+  snippets: SavedSnippet[];
+  saveCurrent: () => void;
+  replaceCode: (code: string) => void;
+  resetExample: () => void;
   diagnostics: CodeDiagnostic[];
   setDiagnostics: (diagnostics: CodeDiagnostic[]) => void;
   execution: Execution;
@@ -21,7 +27,7 @@ type ReplState = {
   clearLogs: () => void;
 };
 
-const defaultSnippet = `// TypeScript Playground - Option/Alt + Enter to run, Cmd/Ctrl + S to format
+export const defaultSnippet = `// TypeScript Playground - Option/Alt + Enter to run, Cmd/Ctrl + S to format
 
 type User = {
   name: string;
@@ -43,6 +49,19 @@ console.log("Doubled:", doubled);
 export const useReplStore = create<ReplState>()(
   persist(
     (set, get) => ({
+      snippets: [],
+      saveCurrent: () => {
+        const { code, snippets } = get();
+        if (!code.trim()) return;
+        const title = code.split("\n").find(line => line.trim() && !line.trim().startsWith("//"))?.trim().slice(0, 60) || "Untitled snippet";
+        set({ snippets: [{ id: crypto.randomUUID(), title, code, updatedAt: Date.now() }, ...snippets.filter(snippet => snippet.code !== code)].slice(0, 12) });
+      },
+      replaceCode: (code) => {
+        if (get().code === code) return;
+        get().saveCurrent();
+        set({ code, logs: [], diagnostics: [], execution: { status: "idle", duration: 0 } });
+      },
+      resetExample: () => get().replaceCode(defaultSnippet),
       diagnostics: [],
       setDiagnostics: (diagnostics) => set({ diagnostics }),
       execution: { status: "idle", duration: 0 },
@@ -56,7 +75,7 @@ export const useReplStore = create<ReplState>()(
     {
       name: "js-repl",
       storage: createJSONStorage(() => localStorage),
-      partialize: (s) => ({ code: s.code }),
+      partialize: (s) => ({ code: s.code, snippets: s.snippets }),
     }
   )
 );

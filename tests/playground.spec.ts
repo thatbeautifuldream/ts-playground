@@ -64,3 +64,21 @@ test("incoming output does not steal the scroll position", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Latest", exact: true })).not.toBeVisible();
   await page.getByRole("button", { name: "Stop", exact: true }).click();
 });
+
+test("new and shared snippets preserve the previous draft", async ({ page }) => {
+  await page.goto("/");
+  await page.locator(".cm-content").fill('console.log("my draft");');
+  await expect(page).toHaveURL(/code=/);
+  await page.getByRole("button", { name: "Snippets", exact: true }).click();
+  await page.getByRole("button", { name: "New snippet", exact: true }).click();
+  await expect(page.locator(".cm-content")).toHaveText("");
+  await expect(page).not.toHaveURL(/code=/);
+  await page.getByRole("button", { name: "Snippets", exact: true }).click();
+  await page.getByRole("button", { name: /console.log\("my draft"\)/ }).click();
+  await expect(page.locator(".cm-content")).toContainText('"my draft"');
+  await page.reload();
+  await expect(page.locator(".cm-content")).toContainText('"my draft"');
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.getByRole("button", { name: "More", exact: true }).click();
+  await page.screenshot({ path: "/tmp/playground-snippets-mobile.png" });
+});
