@@ -1,5 +1,6 @@
 "use client";
 
+import { useReplStore } from "@/stores/repl-store";
 import { SnippetsMenu } from "@/components/repl/snippets-menu";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -67,6 +68,9 @@ export function Header({ onRun, onThemeToggle, getShareUrl, onFormat, onTerminal
 function SharePopover({ getShareUrl }: { getShareUrl: () => string }) {
   const [url, setUrl] = useState("");
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
+  const [snapshotCode, setSnapshotCode] = useState("");
+  const tooLarge = url.length > 8000;
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -78,6 +82,8 @@ function SharePopover({ getShareUrl }: { getShareUrl: () => string }) {
   const handleOpenChange = (open: boolean) => {
     if (open) {
       setUrl(getShareUrl());
+      setSnapshotCode(useReplStore.getState().code);
+      setCopyError(false);
       setCopied(false);
     }
   };
@@ -89,7 +95,7 @@ function SharePopover({ getShareUrl }: { getShareUrl: () => string }) {
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
       copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
-      window.prompt("Copy link", url);
+      setCopyError(true);
     }
   };
 
@@ -112,17 +118,24 @@ function SharePopover({ getShareUrl }: { getShareUrl: () => string }) {
         className="flex w-80 max-w-[calc(100vw-1rem)] flex-col gap-3"
       >
         <PopoverHeader>
-          <PopoverTitle>Share playground</PopoverTitle>
+          <PopoverTitle>Share a snapshot</PopoverTitle>
           <PopoverDescription>
-            Anyone with this link can view and run your code.
+            Anyone with the link gets a copy of this code. Later edits stay on your device.
           </PopoverDescription>
         </PopoverHeader>
-        <InputGroup>
+        {tooLarge ? <div className="flex flex-col gap-3">
+          <p className="text-base text-muted-foreground sm:text-sm">This snippet is too large for a reliable link. Download it and share the file instead.</p>
+          <Button type="button" variant="outline" size="sm" onClick={() => {
+            const objectUrl = URL.createObjectURL(new Blob([snapshotCode], { type: "text/plain" }));
+            const link = document.createElement("a"); link.href = objectUrl; link.download = "playground.ts"; link.click();
+            setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+          }}>Download TypeScript</Button>
+        </div> : <InputGroup>
           <InputGroupInput
             readOnly
             value={url}
             name="share-link"
-            aria-label="Share link"
+            aria-label="Snapshot link"
             onFocus={(e) => e.currentTarget.select()}
             className="font-mono text-xs max-sm:text-base"
           />
@@ -131,13 +144,14 @@ function SharePopover({ getShareUrl }: { getShareUrl: () => string }) {
               size="sm"
               className="relative min-w-16"
               onClick={handleCopy}
-              aria-label={copied ? "Copied" : "Copy link"}
+              aria-label={copied ? "Copied" : "Copy snapshot link"}
             >
-              {copied ? "Copied" : "Copy"}
+              {copied ? "Copied" : "Copy link"}
               <TouchTarget />
             </InputGroupButton>
           </InputGroupAddon>
-        </InputGroup>
+        </InputGroup>}
+        {copyError && <p role="status" className="text-base text-destructive sm:text-sm">Could not copy. Select the link and copy it manually.</p>}
       </PopoverContent>
     </Popover>
   );

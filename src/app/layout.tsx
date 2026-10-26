@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ServiceWorkerProvider } from "@/components/providers/service-worker-provider";
-import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "./globals.css";
 
 const inter = localFont({
@@ -48,7 +47,6 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${googleSansCode.variable} antialiased`}
       >
-        <NuqsAdapter>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -57,7 +55,6 @@ export default function RootLayout({
           >
             {children}
           </ThemeProvider>
-        </NuqsAdapter>
         <ServiceWorkerProvider />
       </body>
     </html>

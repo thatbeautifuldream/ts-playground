@@ -12,13 +12,11 @@ import {
 } from "@/components/ui/resizable";
 import { useSandbox } from "@/hooks/use-sandbox";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { compressedCodeParser } from "@/lib/url-parser";
-import { compressToEncodedURIComponent } from "lz-string";
+import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
 import { formatTypeScript } from "@/lib/transpile-ts";
 import { useReplStore } from "@/stores/repl-store";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
-import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHotkeys } from "@tanstack/react-hotkeys";
 import type { EditorView } from "@codemirror/view";
@@ -33,13 +31,8 @@ export function PageClient() {
   const running = useReplStore((s) => s.execution.status === "running");
   const { resolvedTheme, setTheme } = useTheme();
 
-  const [urlCode, setUrlCode] = useQueryState(
-    "code",
-    compressedCodeParser.withOptions({ history: "replace" })
-  );
-  const isInitialMount = useRef(true);
-  const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  const snapshotNotice = useReplStore((s) => s.snapshotNotice);
+  const setSnapshotNotice = useReplStore((s) => s.setSnapshotNotice);
   const isMobile = useMediaQuery("(max-width: 1023px)");
   const [mobileView, setMobileView] = useState<MobileView>("editor");
   const [terminalOpen, setTerminalOpen] = useState(true);
@@ -74,29 +67,20 @@ export function PageClient() {
   };
 
   useEffect(() => {
-    if (isInitialMount.current) {
-      if (urlCode !== null) {
-        useReplStore.getState().replaceCode(urlCode);
-      }
-      isInitialMount.current = false;
+    const url = new URL(window.location.href);
+    const encoded = url.searchParams.get("code");
+    if (encoded === null) return;
+    const loaded = decompressFromEncodedURIComponent(encoded);
+    if (loaded === null || (loaded === "" && encoded !== compressToEncodedURIComponent(""))) {
+      setSnapshotNotice("This snapshot link is invalid. Your local draft is unchanged.");
+    } else {
+      useReplStore.getState().replaceCode(loaded);
+      setSnapshotNotice("Snapshot opened. Your previous draft is in Recent snippets.");
     }
-  }, [urlCode, setCode]);
-
-  useEffect(() => {
-    if (!isInitialMount.current && code !== (urlCode ?? "")) {
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
-      }
-      updateTimeoutRef.current = setTimeout(() => {
-        setUrlCode(code || null);
-      }, 500);
-    }
-    return () => {
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
-      }
-    };
-  }, [code, urlCode, setUrlCode]);
+    // Once imported, edits belong to the local draft; refresh must not reload an old snapshot.
+    url.searchParams.delete("code");
+    window.history.replaceState(window.history.state, "", url.toString());
+  }, [setSnapshotNotice]);
 
   const { run, stop } = useSandbox();
 
@@ -130,11 +114,7 @@ export function PageClient() {
 
   const getShareUrl = useCallback(() => {
     const url = new URL(window.location.href);
-    if (code) {
-      url.searchParams.set("code", compressToEncodedURIComponent(code));
-    } else {
-      url.searchParams.delete("code");
-    }
+    url.searchParams.set("code", compressToEncodedURIComponent(code));
     return url.toString();
   }, [code]);
 
@@ -143,6 +123,7 @@ export function PageClient() {
 
   return (
     <main ref={workspaceRef} className="isolate h-dvh bg-background text-foreground overflow-hidden flex flex-col">
+      {snapshotNotice && <div role="status" className="flex shrink-0 items-center justify-between gap-3 border-b border-rule px-3 py-2 text-base text-muted-foreground sm:text-sm"><p>{snapshotNotice}</p><Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => setSnapshotNotice("")}>Dismiss</Button></div>}
       {isMobile ? (
         <>
           <Header onThemeToggle={toggleTheme} getShareUrl={getShareUrl} />

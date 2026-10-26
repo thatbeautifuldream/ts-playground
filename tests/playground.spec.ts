@@ -1,3 +1,4 @@
+import { compressToEncodedURIComponent } from "lz-string";
 import { test, expect } from "@playwright/test";
 
 test("execution can be interrupted and a later run succeeds", async ({ page }) => {
@@ -23,7 +24,7 @@ test("semantic type errors navigate back to code on mobile", async ({ page }) =>
   await problem.click();
   await expect(page.locator(".cm-content")).toBeFocused();
   await expect(page.locator(".cm-content .cm-lintRange-error")).not.toHaveCount(0);
-  await page.screenshot({ path: "/tmp/playground-diagnostics-mobile.png" });
+  await page.screenshot({ animations: "disabled", path: "/tmp/playground-diagnostics-mobile.png" });
 });
 
 test("runtime errors map back to the original TypeScript line", async ({ page }) => {
@@ -46,7 +47,7 @@ test("console preserves structured values, warnings, and copy/clear actions", as
   await expect(page.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Clear", exact: true }).click();
   await expect(page.getByText("Output cleared.", { exact: true })).toBeVisible();
-  await page.screenshot({ path: "/tmp/playground-console-desktop.png" });
+  await page.screenshot({ animations: "disabled", path: "/tmp/playground-console-desktop.png" });
 });
 
 test("incoming output does not steal the scroll position", async ({ page }) => {
@@ -68,7 +69,6 @@ test("incoming output does not steal the scroll position", async ({ page }) => {
 test("new and shared snippets preserve the previous draft", async ({ page }) => {
   await page.goto("/");
   await page.locator(".cm-content").fill('console.log("my draft");');
-  await expect(page).toHaveURL(/code=/);
   await page.getByRole("button", { name: "Snippets", exact: true }).click();
   await page.getByRole("button", { name: "New snippet", exact: true }).click();
   await expect(page.locator(".cm-content")).toHaveText("");
@@ -80,5 +80,36 @@ test("new and shared snippets preserve the previous draft", async ({ page }) => 
   await expect(page.locator(".cm-content")).toContainText('"my draft"');
   await page.setViewportSize({ width: 320, height: 640 });
   await page.getByRole("button", { name: "More", exact: true }).click();
-  await page.screenshot({ path: "/tmp/playground-snippets-mobile.png" });
+  await page.screenshot({ animations: "disabled", path: "/tmp/playground-snippets-mobile.png" });
+});
+
+
+test("snapshot links import copies, preserve drafts, and leave edits local", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/");
+  await page.locator(".cm-content").fill('console.log("original draft");');
+  const shared = 'console.log("shared copy");';
+  await page.goto(`/?code=${compressToEncodedURIComponent(shared)}`);
+  await expect(page.locator(".cm-content")).toHaveText(shared);
+  await expect(page).not.toHaveURL(/code=/);
+  await page.getByRole("button", { name: "Dismiss", exact: true }).click();
+  await page.locator(".cm-content").fill('console.log("edited copy");');
+  await page.reload();
+  await expect(page.locator(".cm-content")).toContainText("edited copy");
+  await page.getByRole("button", { name: "Share", exact: true }).click();
+  await page.getByRole("button", { name: "Copy snapshot link", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Snippets", exact: true }).click();
+  await expect(page.getByRole("button", { name: /console.log\("original draft"\)/ })).toBeVisible();
+});
+
+test("large snapshots offer a file instead of an unreliable link", async ({ page }) => {
+  await page.goto("/");
+  await page.locator(".cm-content").fill("// " + Array.from({ length: 2500 }, (_, i) => (i * 2654435761).toString(36)).join(" "));
+  await page.getByRole("button", { name: "Share", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Download TypeScript", exact: true })).toBeVisible();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download TypeScript", exact: true }).click();
+  expect((await download).suggestedFilename()).toBe("playground.ts");
 });

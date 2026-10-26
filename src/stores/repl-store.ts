@@ -12,6 +12,8 @@ export type Execution = { status: "idle" | "running" | "success" | "error" | "st
 export type SavedSnippet = { id: string; title: string; code: string; updatedAt: number };
 
 type ReplState = {
+  snapshotNotice: string;
+  setSnapshotNotice: (notice: string) => void;
   snippets: SavedSnippet[];
   saveCurrent: () => void;
   replaceCode: (code: string) => void;
@@ -49,6 +51,8 @@ console.log("Doubled:", doubled);
 export const useReplStore = create<ReplState>()(
   persist(
     (set, get) => ({
+      snapshotNotice: "",
+      setSnapshotNotice: (snapshotNotice) => set({ snapshotNotice }),
       snippets: [],
       saveCurrent: () => {
         const { code, snippets } = get();
