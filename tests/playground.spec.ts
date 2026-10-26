@@ -113,3 +113,25 @@ test("large snapshots offer a file instead of an unreliable link", async ({ page
   await page.getByRole("button", { name: "Download TypeScript", exact: true }).click();
   expect((await download).suggestedFilename()).toBe("playground.ts");
 });
+
+test("shortcut help reflects registered commands and console toggles preserve editing", async ({ page }) => {
+  await page.goto("/");
+  const editor = page.locator(".cm-content");
+  await editor.fill('console.log("keyboard");');
+  await page.getByRole("button", { name: "Shortcuts", exact: true }).click();
+  await expect(page.getByText("Run / Stop", { exact: true })).toBeVisible();
+  await expect(page.getByText("Toggle console", { exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await editor.press("Control+`");
+  await expect(page.getByRole("button", { name: "Console", exact: true })).toHaveAttribute("aria-expanded", "false");
+  await editor.press("Meta+j");
+  await expect(page.getByRole("region", { name: "Console", exact: true })).toBeFocused();
+  await page.keyboard.press("Meta+j");
+  await expect(editor).toBeFocused();
+  await editor.press("Alt+Enter");
+  await expect(page.getByText("keyboard", { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.getByRole("button", { name: "More", exact: true }).click();
+  await expect(page.getByText("Keyboard shortcuts", { exact: true })).toBeVisible();
+  await page.screenshot({ animations: "disabled", path: "/tmp/playground-shortcuts-mobile.png" });
+});

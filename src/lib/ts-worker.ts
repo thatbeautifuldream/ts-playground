@@ -159,3 +159,5 @@ function format(sourceCode: string): Omit<TranspileResponse, "id" | "kind"> {
     };
   }
 }
+
+self.postMessage({ type: "ready" });

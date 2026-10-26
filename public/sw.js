@@ -1,4 +1,4 @@
-const VERSION = "v5";
+const VERSION = "v6";
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 
@@ -32,6 +32,10 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+
+  // Worker bootstraps encode their entrypoint in a URL fragment. Cache keys
+  // discard fragments, so reusing a response can start the wrong worker.
+  if (request.destination === "worker" || url.pathname.includes("turbopack-worker")) return;
 
   if (request.mode === "navigate") {
     event.respondWith(

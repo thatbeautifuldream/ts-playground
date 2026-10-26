@@ -36,7 +36,7 @@ export function Terminal({ ref, onNavigate }: { ref?: Ref<HTMLDivElement>; onNav
     } catch { setCopyError(true); }
   };
   return (
-    <div ref={ref} id="terminal-panel" role="region" aria-label="Terminal" tabIndex={-1} className="flex h-full min-w-0 flex-col bg-background outline-none">
+    <div ref={ref} id="terminal-panel" role="region" aria-label="Console" tabIndex={-1} className="flex h-full min-w-0 flex-col bg-background outline-none">
       <div className="flex min-h-10 shrink-0 flex-wrap items-center justify-between gap-x-3 border-b border-border px-3 text-sm text-muted-foreground">
         <div role="status" className="min-w-0 py-1 tabular-nums">
           {execution.status === "running" ? "Running…" : execution.status === "idle" ? "Ready" : `${execution.status === "success" ? "Finished" : execution.status === "error" ? "Failed" : "Stopped"} · ${execution.duration} ms`}

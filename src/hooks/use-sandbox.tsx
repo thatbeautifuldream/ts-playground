@@ -50,6 +50,7 @@ export function useSandbox() {
     workerRef.current = worker;
     worker.onmessage = ({ data }) => {
       if (id !== generation.current) return;
+      if (data.type === "ready") { worker.postMessage(result.code); return; }
       if (data.type === "done") complete(data.payload === "error" ? "error" : "success");
       else if (["log", "error", "warn", "info", "debug"].includes(data.type)) {
         const message = typeof data.payload === "string" ? data.payload : data.payload.message;
@@ -68,7 +69,6 @@ export function useSandbox() {
       store.pushLog({ type: "error", message: "Execution stopped after 30 seconds. Check for an infinite loop or a timer that never ends." });
       complete("stopped");
     }, 30_000);
-    worker.postMessage(result.code);
   }, [complete, dispose]);
 
   return { run, stop };

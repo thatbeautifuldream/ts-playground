@@ -1,5 +1,6 @@
 "use client";
 
+import { ShortcutHint, ShortcutsPopover } from "@/components/repl/shortcuts";
 import { useReplStore } from "@/stores/repl-store";
 import { SnippetsMenu } from "@/components/repl/snippets-menu";
 import Link from "next/link";
@@ -44,17 +45,18 @@ export function Header({ onRun, onThemeToggle, getShareUrl, onFormat, onTerminal
           </Button>
         )}
         {onRun && (
-          <Button type="button" variant="default" size="sm" onClick={onRun} className="relative h-8 px-3" title="Run (Option/Alt+Enter)" aria-keyshortcuts="Alt+Enter">
-            {running ? "Stop" : "Run"}<TouchTarget />
+          <Button type="button" variant="default" size="sm" onClick={onRun} className="relative h-8 px-3" title="Run (Option/Alt+Enter)" aria-keyshortcuts="Alt+Enter" aria-label={running ? "Stop" : "Run"}>
+            {running ? "Stop" : "Run"}<span className="hidden pl-2 lg:inline"><ShortcutHint hotkey="Alt+Enter" /></span><TouchTarget />
           </Button>
         )}
         {onTerminalToggle && (
-          <Button type="button" variant="ghost" size="sm" onClick={onTerminalToggle} className="relative h-8 px-2" title="Toggle terminal (Ctrl+` / Cmd+J)" aria-expanded={terminalOpen} aria-controls="terminal-panel" aria-keyshortcuts="Control+` Meta+j">
-            Terminal<TouchTarget />
+          <Button type="button" variant="ghost" size="sm" onClick={onTerminalToggle} className="relative h-8 px-2" title="Toggle console (Ctrl+` / Cmd+J)" aria-expanded={terminalOpen} aria-controls="terminal-panel" aria-keyshortcuts="Control+` Meta+j">
+            Console<TouchTarget />
           </Button>
         )}
         {getShareUrl && <SharePopover getShareUrl={getShareUrl} />}
         <SnippetsMenu onThemeToggle={onThemeToggle} />
+        <ShortcutsPopover />
         {onThemeToggle && (
           <Button type="button" variant="ghost" size="sm" onClick={onThemeToggle} className="relative hidden h-8 px-2 lg:inline-flex" title="Toggle theme" aria-label="Toggle theme">
             Theme<TouchTarget />

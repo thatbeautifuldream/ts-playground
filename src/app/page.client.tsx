@@ -96,18 +96,23 @@ export function PageClient() {
 
   const handleFormat = useCallback(async () => {
     const result = await formatTypeScript(code);
-    if (result.success && result.code !== code) {
+    if (useReplStore.getState().code !== code) return;
+    if (!result.success) {
+      useReplStore.getState().pushLog({ type: "error", message: result.errors.join("\n") || "Could not format this snippet." });
+      return;
+    }
+    if (result.code !== code) {
       setCode(result.code);
     }
   }, [code, setCode]);
 
   useHotkeys(
     [
-      { hotkey: "Alt+Enter", callback: runCode, options: { meta: { name: "Run code" } } },
+      { hotkey: "Alt+Enter", callback: runCode, options: { meta: { name: "Run / Stop" } } },
       { hotkey: "Control+S", callback: handleFormat, options: { meta: { name: "Format code" } } },
       { hotkey: "Meta+S", callback: handleFormat, options: { meta: { name: "Format code" } } },
-      { hotkey: "Control+`", callback: toggleTerminal, options: { meta: { name: "Toggle terminal" } } },
-      { hotkey: "Meta+J", callback: toggleTerminal, options: { meta: { name: "Toggle terminal" } } },
+      { hotkey: "Control+`", callback: toggleTerminal, options: { meta: { name: "Toggle console" } } },
+      { hotkey: "Meta+J", callback: toggleTerminal, options: { meta: { name: "Toggle console" } } },
     ],
     { ignoreInputs: false, capture: true, preventDefault: true, requireReset: true }
   );
@@ -227,7 +232,7 @@ function MobileToolbar({
             onClick={() => setMobileView(view)}
             aria-pressed={mobileView === view}
             aria-controls={view === "console" ? "terminal-panel" : undefined}
-            title={view === "console" ? "Toggle terminal (Ctrl+` / Cmd+J)" : "Show code"}
+            title={view === "console" ? "Toggle console (Ctrl+` / Cmd+J)" : "Show code"}
             className={cn(
               "relative h-8 shrink-0 rounded-md px-2 text-sm font-medium",
               mobileView === view ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"

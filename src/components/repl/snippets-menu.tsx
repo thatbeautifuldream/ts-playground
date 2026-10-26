@@ -1,5 +1,6 @@
 "use client";
 
+import { ShortcutsList } from "./shortcuts";
 import { useState } from "react";
 import { useReplStore } from "@/stores/repl-store";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ export function SnippetsMenu({ onThemeToggle }: { onThemeToggle?: () => void }) 
   const replace = (code: string) => { useReplStore.getState().replaceCode(code); setOpen(false); };
   return <Popover open={open} onOpenChange={setOpen}>
     <PopoverTrigger asChild><Button type="button" size="sm" variant="ghost" className="relative h-8 px-2"><span className="lg:hidden">More</span><span className="hidden lg:inline">Snippets</span><TouchTarget /></Button></PopoverTrigger>
-    <PopoverContent align="end" className="flex w-80 max-w-[calc(100vw-1rem)] flex-col gap-3">
+    <PopoverContent align="end" className="flex max-h-[calc(100dvh-4rem)] w-80 max-w-[calc(100vw-1rem)] flex-col gap-3 overflow-auto">
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" size="sm" variant="ghost" onClick={() => replace("")}>New snippet</Button>
         <Button type="button" size="sm" variant="ghost" onClick={() => { useReplStore.getState().saveCurrent(); setNotice("Snapshot saved on this device."); }}>Save copy</Button>
@@ -29,6 +30,7 @@ export function SnippetsMenu({ onThemeToggle }: { onThemeToggle?: () => void }) 
           <p className="text-sm text-muted-foreground">{new Date(snippet.updatedAt).toLocaleString()}</p>
         </button>) : <p className="px-2 text-base text-muted-foreground sm:text-sm">Saved and previous drafts appear here.</p>}
       </div>
+      <div className="border-t border-rule pt-3 lg:hidden"><ShortcutsList /></div>
     </PopoverContent>
   </Popover>;
 }

@@ -20,11 +20,11 @@ const pending = new Map<number, PendingEntry>();
 
 function getWorker(): Promise<Worker> {
   if (!workerPromise) {
-    workerPromise = import("./ts-worker-client").then(({ createWorker }) => {
+    workerPromise = import("./ts-worker-client").then(({ createWorker }) => new Promise<Worker>((resolve, rejectReady) => {
       const worker = createWorker();
-      worker.onmessage = (
-        event: MessageEvent<TranspileResponse>
-      ) => {
+      const readyTimeout = setTimeout(() => { worker.terminate(); workerPromise = null; rejectReady(new Error("Compiler could not start. Try running again.")); }, 15000);
+      worker.onmessage = (event: MessageEvent<TranspileResponse | { type: "ready" }>) => {
+        if ("type" in event.data) { clearTimeout(readyTimeout); resolve(worker); return; }
         const { id, success, code, errors, diagnostics, sourceMap } = event.data;
         const entry = pending.get(id);
         if (entry) {
@@ -33,14 +33,14 @@ function getWorker(): Promise<Worker> {
         }
       };
       worker.onerror = (error) => {
-        for (const { reject } of pending.values()) {
-          reject(error);
-        }
+        clearTimeout(readyTimeout);
+        rejectReady(new Error(error.message || "Compiler failed to start."));
+        for (const { reject } of pending.values()) reject(error);
         pending.clear();
+        worker.terminate();
         workerPromise = null;
       };
-      return worker;
-    });
+    }));
   }
   return workerPromise;
 }

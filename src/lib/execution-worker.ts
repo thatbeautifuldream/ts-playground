@@ -66,3 +66,5 @@ scope.onmessage = async (event: MessageEvent<string>) => {
   catch (error) { fail(error); }
   finally { evaluated = true; nativeTimeout(finish, 0); }
 };
+
+send("ready");
